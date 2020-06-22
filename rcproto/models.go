@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/blocktree/openwallet/crypto"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/crypto"
+	"github.com/blocktree/openwallet/v2/openwallet"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/tidwall/gjson"
 )
@@ -53,17 +53,17 @@ type Block struct {
 }
 
 type Transaction struct {
-	TxType      string
-	TxID        string
-	Fee         uint64
-	TimeStamp   uint64
-	From        string
-	To          string
-	Amount      uint64
-	BlockHeight uint64
-	BlockHash   string
-	Status      string
-	DestinationTag    string
+	TxType         string
+	TxID           string
+	Fee            uint64
+	TimeStamp      uint64
+	From           string
+	To             string
+	Amount         uint64
+	BlockHeight    uint64
+	BlockHash      string
+	Status         string
+	DestinationTag string
 }
 
 func (c *Client) NewTransaction(json *gjson.Result, memoScan string) *Transaction {
@@ -86,7 +86,6 @@ func (c *Client) NewTransaction(json *gjson.Result, memoScan string) *Transactio
 	return obj
 }
 
-
 func (c *WSClient) NewTransaction(json *gjson.Result, memoScan string) *Transaction {
 	obj := &Transaction{}
 	obj.TxType = gjson.Get(json.Raw, "TransactionType").String()
@@ -96,10 +95,10 @@ func (c *WSClient) NewTransaction(json *gjson.Result, memoScan string) *Transact
 	obj.TimeStamp = uint64(946612800) + gjson.Get(json.Raw, "date").Uint() //1999-12-31 12:00:00 + date
 	obj.From = gjson.Get(json.Raw, "Account").String()
 	obj.BlockHeight = gjson.Get(json.Raw, "inLedger").Uint()
-	if obj.BlockHeight != 0{
+	if obj.BlockHeight != 0 {
 		obj.BlockHash, _ = c.getBlockHash(obj.BlockHeight)
 	}
-	amount, err := strconv.ParseInt(gjson.Get(json.Raw, "Amount").String(), 10, 64)
+	amount, err := strconv.ParseInt(gjson.Get(json.Raw, "meta").Get("delivered_amount").String(), 10, 64)
 	if err == nil {
 		obj.Amount = uint64(amount)
 		obj.To = gjson.Get(json.Raw, "Destination").String()
@@ -113,8 +112,7 @@ func (c *WSClient) NewTransaction(json *gjson.Result, memoScan string) *Transact
 	return obj
 }
 
-
-func NewTransaction(json  *gjson.Result) *Transaction {
+func NewTransaction(json *gjson.Result) *Transaction {
 	obj := &Transaction{}
 	obj.BlockHash = json.Get("ledger_hash").String()
 	obj.BlockHeight = json.Get("ledger_index").Uint()
@@ -128,7 +126,7 @@ func NewTransaction(json  *gjson.Result) *Transaction {
 		obj.Amount = uint64(amount)
 		obj.To = json.Get("tx_json").Get("Destination").String()
 	}
-	if json.Get( "metadata").Get("TransactionResult").String() == "tesSUCCESS" {
+	if json.Get("metadata").Get("TransactionResult").String() == "tesSUCCESS" {
 		obj.Status = "success"
 	}
 	return obj

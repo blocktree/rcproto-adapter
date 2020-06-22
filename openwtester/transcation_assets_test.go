@@ -18,9 +18,9 @@ package openwtester
 import (
 	"testing"
 
-	"github.com/blocktree/openwallet/log"
-	"github.com/blocktree/openwallet/openw"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/log"
+	"github.com/blocktree/openwallet/v2/openw"
+	"github.com/blocktree/openwallet/v2/openwallet"
 )
 
 func testGetAssetsAccountBalance(tm *openw.WalletManager, walletID, accountID string) {
@@ -132,11 +132,11 @@ func TestTransfer(t *testing.T) {
 	tm := testInitWalletManager()
 	walletID := "WFdP3P5J2MhBWaquzpM6pG9BUdoLbEzYDb"
 	accountID := "G7FVHa59EGogaiWEu4uc3K7Bbj9dMJDiaETt2cpw8Fv8"
-	to := "rM4ParY1ybBCwba9WKV2nwJM2uUm7VGij"
+	to := "rhuWdRw3dSwJuR9JENn61ekJuCVe1T1ucs"
 
 	testGetAssetsAccountBalance(tm, walletID, accountID)
 
-	rawTx, err := testCreateTransactionStep(tm, walletID, accountID, to, "20", "", nil)
+	rawTx, err := testCreateTransactionStep(tm, walletID, accountID, to, "0.000001", "", nil)
 	if err != nil {
 		return
 	}

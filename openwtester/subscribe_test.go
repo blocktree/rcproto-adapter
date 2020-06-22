@@ -16,14 +16,14 @@
 package openwtester
 
 import (
-	"github.com/blocktree/openwallet/common/file"
+	"github.com/blocktree/openwallet/v2/common/file"
 	"path/filepath"
 	"testing"
 
 	"github.com/astaxie/beego/config"
-	"github.com/blocktree/openwallet/log"
-	"github.com/blocktree/openwallet/openw"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/log"
+	"github.com/blocktree/openwallet/v2/openw"
+	"github.com/blocktree/openwallet/v2/openwallet"
 )
 
 ////////////////////////// 测试单个扫描器 //////////////////////////
@@ -54,26 +54,36 @@ func (sub *subscriberSingle) BlockExtractDataNotify(sourceKey string, data *open
 	return nil
 }
 
+func (sub *subscriberSingle) BlockExtractSmartContractDataNotify(sourceKey string, data *openwallet.SmartContractReceipt) error {
+	return nil
+}
+
 func TestSubscribeAddress(t *testing.T) {
 
 	var (
 		endRunning = make(chan bool, 1)
 		symbol     = "RCP"
 		addrs      = map[string]string{
-			//"WkSFD9gYJ4GW6UFk32RnejhvT1dUjrvttc": "register", //3075359
-			//"rs9tBKt96q9gwrePKPqimUuF7vErgMaker": "offer",
-			"rPASzbJFtmfExwtP4yb52GhckPKWHuAyiT": "sender",
-			//"rnX1rvjWywTKxRzNbT1WSt4DmRqbF62WpA": "reciver",
+			//"rPyHbxHAHsUD1G3xrsrfxAocPAPc2gL9cV": "sender",
+			"rL7KP6VLwcSQ97GAkNT6t9HrkncnF4Ncns": "reciver",
 		}
 	)
 
-	//GetSourceKeyByAddress 获取地址对应的数据源标识
-	scanAddressFunc := func(address string) (string, bool) {
-		key, ok := addrs[address]
+	var scanAddressFunc openwallet.BlockScanTargetFuncV2
+	scanAddressFunc = func (target openwallet.ScanTargetParam) openwallet.ScanTargetResult {
+		key, ok := addrs[target.ScanTarget]
 		if !ok {
-			return "", false
+			return openwallet.ScanTargetResult{
+				SourceKey:  key,
+				Exist:      false,
+				TargetInfo: nil,
+			}
 		}
-		return key, true
+		return openwallet.ScanTargetResult{
+			SourceKey:  key,
+			Exist:      true,
+			TargetInfo: nil,
+		}
 	}
 
 	assetsMgr, err := openw.GetAssetsAdapter(symbol)
@@ -110,13 +120,13 @@ func TestSubscribeAddress(t *testing.T) {
 		scanner.SetBlockchainDAI(dai)
 	}
 
-	scanner.SetRescanBlockHeight(10)
+	scanner.SetRescanBlockHeight(5774128)
 	if scanner == nil {
 		log.Error(symbol, "is not support block scan")
 		return
 	}
 
-	scanner.SetBlockScanAddressFunc(scanAddressFunc)
+	scanner.SetBlockScanTargetFuncV2(scanAddressFunc)
 
 	sub := subscriberSingle{}
 	scanner.AddObserver(&sub)

@@ -19,8 +19,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/asdine/storm"
-	"github.com/blocktree/openwallet/common"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/common"
+	"github.com/blocktree/openwallet/v2/openwallet"
 	"github.com/graarh/golang-socketio"
 	"github.com/graarh/golang-socketio/transport"
 	"github.com/shopspring/decimal"
@@ -28,11 +28,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
 )
 
 const (
-	maxExtractingSize = 20           //并发的扫描线程数
+	maxExtractingSize = 20 //并发的扫描线程数
 )
 
 //RCPBlockScanner ontology的区块链扫描器
@@ -141,7 +140,7 @@ func (bs *RCPBlockScanner) ScanBlockTask() {
 			localBlock, err = bs.wm.Client.getBlockByHeight(currentHeight)
 		} else if bs.wm.Config.APIChoose == "ws" {
 			localBlock, err = bs.wm.WSClient.getBlockByHeight(currentHeight)
-		}else {
+		} else {
 			bs.wm.Log.Std.Info("Invalid config, check the ini file!")
 		}
 		if err != nil {
@@ -182,7 +181,7 @@ func (bs *RCPBlockScanner) ScanBlockTask() {
 					localBlock, err = bs.wm.Client.getBlockByHeight(currentHeight)
 				} else if bs.wm.Config.APIChoose == "ws" {
 					localBlock, err = bs.wm.WSClient.getBlockByHeight(currentHeight)
-				}else {
+				} else {
 					bs.wm.Log.Std.Info("Invalid config, check the ini file!")
 				}
 				if err != nil {
@@ -251,21 +250,21 @@ func (bs *RCPBlockScanner) ScanBlock(height uint64) error {
 		return err
 	}
 
-	bs.newBlockNotify(block ,false)
+	bs.newBlockNotify(block, false)
 
 	return nil
 }
 
-func (bs *RCPBlockScanner) scanBlock(height uint64) (*Block,error) {
+func (bs *RCPBlockScanner) scanBlock(height uint64) (*Block, error) {
 	var (
 		block *Block
-		err error
+		err   error
 	)
 	if bs.wm.Config.APIChoose == "rpc" {
 		block, err = bs.wm.Client.getBlockByHeight(height)
 	} else if bs.wm.Config.APIChoose == "ws" {
 		block, err = bs.wm.WSClient.getBlockByHeight(height)
-	}else {
+	} else {
 		return nil, errors.New("Invalid config, check the ini file!")
 	}
 	if err != nil {
@@ -275,7 +274,7 @@ func (bs *RCPBlockScanner) scanBlock(height uint64) (*Block,error) {
 		unscanRecord := openwallet.NewUnscanRecord(height, "", err.Error(), bs.wm.Symbol())
 		bs.SaveUnscanRecord(unscanRecord)
 		bs.wm.Log.Std.Info("block height: %d extract failed.", height)
-		return nil,err
+		return nil, err
 	}
 
 	bs.wm.Log.Std.Info("block scanner scanning height: %d ...", block.Height)
@@ -285,7 +284,7 @@ func (bs *RCPBlockScanner) scanBlock(height uint64) (*Block,error) {
 		bs.wm.Log.Std.Info("block scanner can not extractRechargeRecords; unexpected error: %v", err)
 	}
 
-	return block,nil
+	return block, nil
 }
 
 //ScanTxMemPool 扫描交易内存池
@@ -353,7 +352,7 @@ func (bs *RCPBlockScanner) RescanFailedRecord() {
 					block, err = bs.wm.Client.getBlockByHeight(height)
 				} else if bs.wm.Config.APIChoose == "ws" {
 					block, err = bs.wm.WSClient.getBlockByHeight(height)
-				}else {
+				} else {
 					bs.wm.Log.Std.Info("Invalid config, check the ini file!")
 				}
 				if err != nil {
@@ -397,7 +396,7 @@ func (bs *RCPBlockScanner) BatchExtractTransaction(blockHeight uint64, blockHash
 	)
 
 	if len(txs) == 0 {
-		return nil//errors.New("BatchExtractTransaction block is nil.")
+		return nil //errors.New("BatchExtractTransaction block is nil.")
 	}
 
 	//生产通道
@@ -423,7 +422,7 @@ func (bs *RCPBlockScanner) BatchExtractTransaction(blockHeight uint64, blockHash
 				}
 			} else {
 				//记录未扫区块
-				unscanRecord := openwallet.NewUnscanRecord(height, "", "",bs.wm.Symbol())
+				unscanRecord := openwallet.NewUnscanRecord(height, "", "", bs.wm.Symbol())
 				bs.SaveUnscanRecord(unscanRecord)
 				bs.wm.Log.Std.Info("block height: %d extract failed.", height)
 				failed++ //标记保存失败数
@@ -445,7 +444,7 @@ func (bs *RCPBlockScanner) BatchExtractTransaction(blockHeight uint64, blockHash
 			go func(mBlockHeight uint64, mTxid string, end chan struct{}, mProducer chan<- ExtractResult) {
 
 				//导出提出的交易
-				mProducer <- bs.ExtractTransaction(mBlockHeight, eBlockHash, mTxid, bs.ScanAddressFunc, memPool)
+				mProducer <- bs.ExtractTransaction(mBlockHeight, eBlockHash, mTxid, bs.ScanTargetFunc, memPool)
 				//释放
 				<-end
 
@@ -505,7 +504,7 @@ func (bs *RCPBlockScanner) extractRuntime(producer chan ExtractResult, worker ch
 }
 
 //ExtractTransaction 提取交易单
-func (bs *RCPBlockScanner) ExtractTransaction(blockHeight uint64, blockHash string, txid string, scanAddressFunc openwallet.BlockScanAddressFunc, memPool bool) ExtractResult {
+func (bs *RCPBlockScanner) ExtractTransaction(blockHeight uint64, blockHash string, txid string, scanAddressFunc openwallet.BlockScanTargetFunc, memPool bool) ExtractResult {
 
 	var (
 		result = ExtractResult{
@@ -540,7 +539,7 @@ func (bs *RCPBlockScanner) ExtractTransaction(blockHeight uint64, blockHash stri
 					result.Success = false
 					return result
 				}
-			}else {
+			} else {
 				bs.wm.Log.Std.Info("block scanner can not extract transaction data; unexpected error: %v", err)
 				result.Success = false
 				return result
@@ -554,8 +553,8 @@ func (bs *RCPBlockScanner) ExtractTransaction(blockHeight uint64, blockHash stri
 		trx.BlockHash = blockHash
 	}
 
-	bs.extractTransaction(trx, &result, scanAddressFunc)
-	
+	bs.extractTransaction(trx, &result, bs.ScanTargetFuncV2)
+
 	return result
 
 }
@@ -579,36 +578,43 @@ func convertFromAmount(amountStr string) uint64 {
 }
 
 //ExtractTransactionData 提取交易单
-func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractResult, scanAddressFunc openwallet.BlockScanAddressFunc) {
+func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractResult, scanAddressFunc openwallet.BlockScanTargetFuncV2) {
 	var (
 		success = true
 	)
 	createAt := time.Now().Unix()
 	var (
 		currentHeight uint64
-		err error
+		err           error
 	)
-	if bs.wm.Config.APIChoose == "rpc"{
-		currentHeight,err = bs.wm.Client.getBlockHeight()
-	}else if bs.wm.Config.APIChoose == "ws" {
+	if bs.wm.Config.APIChoose == "rpc" {
+		currentHeight, err = bs.wm.Client.getBlockHeight()
+	} else if bs.wm.Config.APIChoose == "ws" {
 		currentHeight, err = bs.wm.WSClient.getBlockHeight()
 	} else {
 		//
 	}
 
-	if trx == nil || err != nil{
+	if trx == nil || err != nil {
 		//记录哪个区块哪个交易单没有完成扫描
 		success = false
 	} else {
 
 		if success {
 			if trx.TxType == "Payment" {
-				sourceKey, ok := scanAddressFunc(trx.From)
-				if ok{
-					if trx.To == ""{
+				targetResult := scanAddressFunc(openwallet.ScanTargetParam {
+					ScanTarget:     trx.From,
+					Symbol:         bs.wm.Symbol(),
+					ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
+				})
+
+
+				if targetResult.Exist {
+
+					if trx.To == "" {
 						input := openwallet.TxInput{}
 						input.TxID = trx.TxID
-						input.Address= trx.From
+						input.Address = trx.From
 						input.Amount = convertToAmount(trx.Fee)
 						input.Coin = openwallet.Coin{
 							Symbol:     bs.wm.Symbol(),
@@ -619,18 +625,18 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 						input.CreateAt = createAt
 						input.BlockHeight = trx.BlockHeight
 						input.BlockHash = trx.BlockHash
-						input.Confirm = int64(currentHeight-trx.BlockHeight)
+						input.Confirm = int64(currentHeight - trx.BlockHeight)
 						input.IsMemo = true
 						//input.Memo = trx.MemoData
-						ed := result.extractData[sourceKey]
+						ed := result.extractData[targetResult.SourceKey]
 						if ed == nil {
 							ed = openwallet.NewBlockExtractData()
-							result.extractData[sourceKey] = ed
+							result.extractData[targetResult.SourceKey] = ed
 						}
-					}else{
+					} else {
 						input := openwallet.TxInput{}
 						input.TxID = trx.TxID
-						input.Address= trx.From
+						input.Address = trx.From
 						input.Amount = convertToAmount(trx.Amount)
 						input.Coin = openwallet.Coin{
 							Symbol:     bs.wm.Symbol(),
@@ -641,13 +647,13 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 						input.CreateAt = createAt
 						input.BlockHeight = trx.BlockHeight
 						input.BlockHash = trx.BlockHash
-						input.Confirm = int64(currentHeight-trx.BlockHeight)
+						input.Confirm = int64(currentHeight - trx.BlockHeight)
 						input.IsMemo = true
 						//input.Memo = trx.MemoData
-						ed := result.extractData[sourceKey]
+						ed := result.extractData[targetResult.SourceKey]
 						if ed == nil {
 							ed = openwallet.NewBlockExtractData()
-							result.extractData[sourceKey] = ed
+							result.extractData[targetResult.SourceKey] = ed
 						}
 						ed.TxInputs = append(ed.TxInputs, &input)
 
@@ -659,13 +665,20 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 						ed.TxInputs = append(ed.TxInputs, feeCharge)
 
 					}
-				}	
-			}else{
-				sourceKey, ok := scanAddressFunc(trx.From)
-				if ok{
+				}
+			} else {
+				targetResult := scanAddressFunc(openwallet.ScanTargetParam {
+					ScanTarget:     trx.From,
+					Symbol:         bs.wm.Symbol(),
+					ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
+				})
+
+
+				if targetResult.Exist {
+
 					input := openwallet.TxInput{}
 					input.TxID = trx.TxID
-					input.Address= trx.From
+					input.Address = trx.From
 					input.Amount = convertToAmount(trx.Fee)
 					input.Coin = openwallet.Coin{
 						Symbol:     bs.wm.Symbol(),
@@ -676,20 +689,27 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 					input.CreateAt = createAt
 					input.BlockHeight = trx.BlockHeight
 					input.BlockHash = trx.BlockHash
-					input.Confirm = int64(currentHeight-trx.BlockHeight)
+					input.Confirm = int64(currentHeight - trx.BlockHeight)
 					input.IsMemo = true
 					//input.Memo = trx.MemoData
-					ed := result.extractData[sourceKey]
+					ed := result.extractData[targetResult.SourceKey]
 					if ed == nil {
 						ed = openwallet.NewBlockExtractData()
-						result.extractData[sourceKey] = ed
+						result.extractData[targetResult.SourceKey] = ed
 					}
 					ed.TxInputs = append(ed.TxInputs, &input)
 				}
 			}
-			if trx.TxType == "Payment" && trx.To !=""{
-				sourceKey, ok := scanAddressFunc(trx.To)
-				if ok{
+			if trx.TxType == "Payment" && trx.To != "" {
+				targetResult := scanAddressFunc(openwallet.ScanTargetParam {
+					ScanTarget:     trx.To,
+					Symbol:         bs.wm.Symbol(),
+					ScanTargetType: openwallet.ScanTargetTypeAccountAddress,
+				})
+
+
+				if targetResult.Exist {
+
 					output := openwallet.TxOutPut{}
 					output.TxID = trx.TxID
 					output.Address = trx.To
@@ -703,15 +723,15 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 					output.CreateAt = createAt
 					output.BlockHeight = trx.BlockHeight
 					output.BlockHash = trx.BlockHash
-					output.Confirm = int64(currentHeight-trx.BlockHeight)
+					output.Confirm = int64(currentHeight - trx.BlockHeight)
 					output.IsMemo = true
 					//output.Memo = trx.MemoData
-					ed := result.extractData[sourceKey]
+					ed := result.extractData[targetResult.SourceKey]
 					if ed == nil {
 						ed = openwallet.NewBlockExtractData()
-						result.extractData[sourceKey] = ed
+						result.extractData[targetResult.SourceKey] = ed
 					}
-	
+
 					ed.TxOutputs = append(ed.TxOutputs, &output)
 				}
 			}
@@ -739,13 +759,13 @@ func (bs *RCPBlockScanner) extractTransaction(trx *Transaction, result *ExtractR
 					Status:      status,
 					SubmitTime:  int64(trx.TimeStamp),
 					ConfirmTime: int64(trx.TimeStamp),
-					IsMemo:true,
+					IsMemo:      true,
 					//Memo:trx.MemoData,
 				}
 
 				tx.SetExtParam("memo", trx.DestinationTag)
 
-				if !(trx.TxType == "Payment" && trx.To !=""){
+				if !(trx.TxType == "Payment" && trx.To != "") {
 					tx.From = []string{trx.From + ":" + convertToAmount(trx.Fee)}
 					tx.To = []string{trx.To + ":" + convertToAmount(trx.Fee)}
 					tx.Amount = convertToAmount(trx.Fee)
@@ -774,7 +794,7 @@ func (bs *RCPBlockScanner) newExtractDataNotify(height uint64, extractData map[s
 			if err != nil {
 				bs.wm.Log.Error("BlockExtractDataNotify unexpected error:", err)
 				//记录未扫区块
-				unscanRecord := openwallet.NewUnscanRecord(height, "", "ExtractData Notify failed.",bs.wm.Symbol())
+				unscanRecord := openwallet.NewUnscanRecord(height, "", "ExtractData Notify failed.", bs.wm.Symbol())
 				err = bs.SaveUnscanRecord(unscanRecord)
 				if err != nil {
 					bs.wm.Log.Std.Error("block height: %d, save unscan record failed. unexpected error: %v", height, err.Error())
@@ -865,7 +885,7 @@ func (bs *RCPBlockScanner) GetCurrentBlockHeader() (*openwallet.BlockHeader, err
 		block, err = bs.wm.Client.getBlockByHeight(blockHeight)
 	} else if bs.wm.Config.APIChoose == "ws" {
 		block, err = bs.wm.WSClient.getBlockByHeight(blockHeight)
-	}else {
+	} else {
 		return nil, errors.New("Invalid config, check the ini file!")
 	}
 
@@ -907,7 +927,7 @@ func (bs *RCPBlockScanner) GetScannedBlockHeader() (*openwallet.BlockHeader, err
 			block, err = bs.wm.Client.getBlockByHeight(blockHeight)
 		} else if bs.wm.Config.APIChoose == "ws" {
 			block, err = bs.wm.WSClient.getBlockByHeight(blockHeight)
-		}else {
+		} else {
 			return nil, errors.New("Invalid config, check the ini file!")
 		}
 		if err != nil {
@@ -929,12 +949,14 @@ func (bs *RCPBlockScanner) GetScannedBlockHeight() uint64 {
 
 func (bs *RCPBlockScanner) ExtractTransactionData(txid string, scanTargetFunc openwallet.BlockScanTargetFunc) (map[string][]*openwallet.TxExtractData, error) {
 
-	scanAddressFunc := func(address string) (string, bool){
-		target := openwallet.ScanTarget{
-			Address: address,
-			BalanceModelType: openwallet.BalanceModelTypeAddress,
-		}
-		return scanTargetFunc(target)
+	scanAddressFunc := func(t openwallet.ScanTarget) (string, bool) {
+		sourceKey, ok := scanTargetFunc(openwallet.ScanTarget{
+			Address:          t.Address,
+			Symbol:           bs.wm.Symbol(),
+			BalanceModelType: bs.wm.BalanceModelType(),
+		})
+		return sourceKey, ok
+
 	}
 	result := bs.ExtractTransaction(0, "", txid, scanAddressFunc, false)
 	if !result.Success {
@@ -1032,9 +1054,9 @@ func (bs *RCPBlockScanner) GetSourceKeyByAddress(address string) (string, bool) 
 func (wm *WalletManager) GetBlockHeight() (uint64, error) {
 	if wm.Config.APIChoose == "rpc" {
 		return wm.Client.getBlockHeight()
-	}else if wm.Config.APIChoose == "ws" {
+	} else if wm.Config.APIChoose == "ws" {
 		return wm.WSClient.getBlockHeight()
-	}else {
+	} else {
 		return 0, errors.New("Invalid config, check the ini file!")
 	}
 
@@ -1107,9 +1129,9 @@ func (wm *WalletManager) GetTransactionInMemPool(txid string) (*Transaction, err
 //GetTransaction 获取交易单
 func (wm *WalletManager) GetTransaction(txid string) (*Transaction, error) {
 	if wm.Config.APIChoose == "rpc" {
-		return wm.Client.getTransaction(txid,wm.Config.MemoScan)
-	}else if wm.Config.APIChoose == "ws" {
-		return wm.WSClient.getTransaction(txid,wm.Config.MemoScan)
+		return wm.Client.getTransaction(txid, wm.Config.MemoScan)
+	} else if wm.Config.APIChoose == "ws" {
+		return wm.WSClient.getTransaction(txid, wm.Config.MemoScan)
 	} else {
 		return nil, errors.New("Invalid config, check the ini file!")
 	}
@@ -1123,13 +1145,13 @@ func (bs *RCPBlockScanner) GetBalanceByAddress(address ...string) ([]*openwallet
 	for _, addr := range address {
 		var (
 			balance *AddrBalance
-			err error
+			err     error
 		)
 
 		if bs.wm.Config.APIChoose == "rpc" {
-			balance, err = bs.wm.Client.getBalance(addr,bs.wm.Config.IgnoreReserve,bs.wm.Config.ReserveAmount)
-		} else if bs.wm.Config.APIChoose == "ws"{
-			balance, err = bs.wm.WSClient.getBalance(addr,bs.wm.Config.IgnoreReserve,bs.wm.Config.ReserveAmount)
+			balance, err = bs.wm.Client.getBalance(addr, bs.wm.Config.IgnoreReserve, bs.wm.Config.ReserveAmount)
+		} else if bs.wm.Config.APIChoose == "ws" {
+			balance, err = bs.wm.WSClient.getBalance(addr, bs.wm.Config.IgnoreReserve, bs.wm.Config.ReserveAmount)
 		} else {
 			return nil, errors.New("Invalid config, check the ini file!")
 		}
@@ -1148,7 +1170,7 @@ func (bs *RCPBlockScanner) GetBalanceByAddress(address ...string) ([]*openwallet
 	return addrsBalance, nil
 }
 
-func (c *Client) getMultiAddrTransactions(memoScan string,offset, limit int, addresses ...string) ([]*Transaction, error) {
+func (c *Client) getMultiAddrTransactions(memoScan string, offset, limit int, addresses ...string) ([]*Transaction, error) {
 	var (
 		trxs      = make([]*Transaction, 0)
 		respLimit = "/limit/10000"
@@ -1164,7 +1186,7 @@ func (c *Client) getMultiAddrTransactions(memoScan string,offset, limit int, add
 		txArray := resp.Array()[0].Array()
 
 		for _, txDetail := range txArray {
-			trxs = append(trxs, c.NewTransaction(&txDetail,memoScan))
+			trxs = append(trxs, c.NewTransaction(&txDetail, memoScan))
 		}
 	}
 
@@ -1174,49 +1196,49 @@ func (c *Client) getMultiAddrTransactions(memoScan string,offset, limit int, add
 //GetAssetsAccountTransactionsByAddress 查询账户相关地址的交易记录
 func (bs *RCPBlockScanner) GetTransactionsByAddress(offset, limit int, coin openwallet.Coin, address ...string) ([]*openwallet.TxExtractData, error) {
 
-	var (
-		array = make([]*openwallet.TxExtractData, 0)
-	)
-
-	trxs, err := bs.wm.Client.getMultiAddrTransactions(bs.wm.Config.MemoScan,offset, limit, address...)
-	if err != nil {
-		return nil, err
-	}
-
-	key := "account"
-
-	//提取账户相关的交易单
-	var scanAddressFunc openwallet.BlockScanAddressFunc = func(findAddr string) (string, bool) {
-		for _, a := range address {
-			if findAddr == a {
-				return key, true
-			}
-		}
-		return "", false
-	}
-
-	//要检查一下tx.BlockHeight是否有值
-
-	for _, tx := range trxs {
-
-		result := ExtractResult{
-			BlockHeight: tx.BlockHeight,
-			TxID:        tx.TxID,
-			extractData: make(map[string]*openwallet.TxExtractData),
-			Success:     true,
-		}
-
-
-		bs.extractTransaction(tx, &result, scanAddressFunc)
-		data := result.extractData
-		txExtract := data[key]
-		if txExtract != nil {
-			array = append(array, txExtract)
-		}
-		
-	}
-
-	return array, nil
+	//var (
+	//	array = make([]*openwallet.TxExtractData, 0)
+	//)
+	//
+	//trxs, err := bs.wm.Client.getMultiAddrTransactions(bs.wm.Config.MemoScan, offset, limit, address...)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//key := "account"
+	//
+	////提取账户相关的交易单
+	//var scanAddressFunc openwallet.BlockScanAddressFunc = func(findAddr string) (string, bool) {
+	//	for _, a := range address {
+	//		if findAddr == a {
+	//			return key, true
+	//		}
+	//	}
+	//	return "", false
+	//}
+	//
+	////要检查一下tx.BlockHeight是否有值
+	//
+	//for _, tx := range trxs {
+	//
+	//	result := ExtractResult{
+	//		BlockHeight: tx.BlockHeight,
+	//		TxID:        tx.TxID,
+	//		extractData: make(map[string]*openwallet.TxExtractData),
+	//		Success:     true,
+	//	}
+	//
+	//	bs.extractTransaction(tx, &result, scanAddressFunc)
+	//	data := result.extractData
+	//	txExtract := data[key]
+	//	if txExtract != nil {
+	//		array = append(array, txExtract)
+	//	}
+	//
+	//}
+	//
+	//return array, nil
+	return nil, nil
 }
 
 //Run 运行

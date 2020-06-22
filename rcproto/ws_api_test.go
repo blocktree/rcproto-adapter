@@ -5,7 +5,9 @@ import (
 	"testing"
 )
 
-var wsurl = "ws://s1.rcproto.org:6060"
+//var wsurl = "ws://39.100.255.117:80"
+//var wsurl = "wss://wss1.rcproto.org"
+var wsurl = "ws://39.100.255.117:80"
 
 //
 //func Test_ws(t *testing.T){
@@ -66,7 +68,7 @@ func Test_ws_getBlockHeight(t *testing.T){
 
 func Test_ws_gwtBlockHash(t *testing.T) {
 	//c := NewWSClient(wsurl, 0, true)
-	height := uint64(162914)
+	height := uint64(667)
 	hash, err := tw.WSClient.getBlockHash(height)
 	if err != nil {
 		t.Error(err)
@@ -98,25 +100,35 @@ func Test_ws_getSequence(t *testing.T){
 
 func Test_ws_getBalance(t *testing.T){
 	c := tw.WSClient
-	addr := "rhA7G6ZnBi3RAd7bBRLWTrp6Y8HALS9Prm"
+	addr := "rsFR6pZHSxX7iyftBkUEJDpeciKgNm5aHi"
 
-	balance, err := c.getBalance(addr, true, 20000000)
-
-	if err != nil {
-		t.Error(err)
-	}else{
-		fmt.Println("balance : ", balance)
-	}
-
-
-	addr = "rM4ParY1ybBCwba9WKV2nwJM2uUm7VGij"
-	balance, err = c.getBalance(addr, true, 20000000)
+	balance, err := c.getBalance(addr, true, 0)
 
 	if err != nil {
 		t.Error(err)
 	}else{
 		fmt.Println("balance : ", balance)
 	}
+
+
+	addr = "rn9FHjCUekibjPaRPgUBSZqG9WPXmDrBFm"
+	balance, err = c.getBalance(addr, true, 0)
+
+	if err != nil {
+		t.Error(err)
+	}else{
+		fmt.Println("balance : ", balance)
+	}
+	//
+	//addr = "rhuWdRw3dSwJuR9JENn61ekJuCVe1T1ucs"
+	//balance, err = c.getBalance(addr, true, 0)
+	//
+	//if err != nil {
+	//	t.Error(err)
+	//}else{
+	//	fmt.Println("balance : ", balance)
+	//}
+
 }
 
 
@@ -133,7 +145,7 @@ func Test_ws_isActived(t *testing.T){
 	}
 
 
-	addr = "rM4ParY1ybBCwba9WKV2nwJM2uUm7VGij"
+	addr = "rJaC7p5qXpqn8rEoYvZxyBqFxErmTHKsfr"
 	isActived, err = c.isActived(addr)
 
 	if err != nil {
@@ -145,7 +157,7 @@ func Test_ws_isActived(t *testing.T){
 
 func Test_ws_getBlockByHeight(t *testing.T) {
 	c := tw.WSClient
-	r, err := c.getBlockByHeight(162006)
+	r, err := c.getBlockByHeight(5774128)
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -153,12 +165,10 @@ func Test_ws_getBlockByHeight(t *testing.T) {
 	}
 }
 
-
-
 func Test_ws_getTransaction(t *testing.T) {
 
 	c := tw.WSClient
-	txid := "72754A23813EA337A7BC3DD53BD093BD3FE277ACAB44AB4204814B643AA78FED"
+	txid := "250DA5387F8C7C4B0104E037A49AEFDF5C56B4B00930FF084E804DA5B476C092"
 	r, err := c.getTransaction(txid, "MemoData")
 
 	if err != nil {

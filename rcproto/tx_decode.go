@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/blocktree/go-owcdrivers/rippleTransaction"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/openwallet"
 	"github.com/prometheus/common/log"
 )
 
@@ -102,7 +102,7 @@ func (decoder *TransactionDecoder) CreateRCPRawTransaction(wrapper openwallet.Wa
 	}
 
 	if len(addresses) == 0 {
-		return openwallet.Errorf(openwallet.ErrAccountNotAddress,"[%s] have not addresses", rawTx.Account.AccountID)
+		return openwallet.Errorf(openwallet.ErrAccountNotAddress, "[%s] have not addresses", rawTx.Account.AccountID)
 	}
 
 	addressesBalanceList := make([]AddrBalance, 0, len(addresses))
@@ -112,9 +112,9 @@ func (decoder *TransactionDecoder) CreateRCPRawTransaction(wrapper openwallet.Wa
 			balance *AddrBalance
 		)
 		if decoder.wm.Config.APIChoose == "rpc" {
-			balance, err = decoder.wm.Client.getBalance(addr.Address,decoder.wm.Config.IgnoreReserve,decoder.wm.Config.ReserveAmount)
-		} else if decoder.wm.Config.APIChoose == "ws"{
-			balance, err = decoder.wm.WSClient.getBalance(addr.Address,decoder.wm.Config.IgnoreReserve,decoder.wm.Config.ReserveAmount)
+			balance, err = decoder.wm.Client.getBalance(addr.Address, decoder.wm.Config.IgnoreReserve, decoder.wm.Config.ReserveAmount)
+		} else if decoder.wm.Config.APIChoose == "ws" {
+			balance, err = decoder.wm.WSClient.getBalance(addr.Address, decoder.wm.Config.IgnoreReserve, decoder.wm.Config.ReserveAmount)
 		} else {
 			return errors.New("Invalid config, check the ini file!")
 		}
@@ -198,28 +198,26 @@ func (decoder *TransactionDecoder) CreateRCPRawTransaction(wrapper openwallet.Wa
 	rawTx.Fees = convertToAmount(fee)
 	rawTx.FeeRate = convertToAmount(fee)
 
-
 	var (
-		sequence uint32
+		sequence    uint32
 		blockHeight uint64
 	)
 	if decoder.wm.Config.APIChoose == "rpc" {
 		sequence, err = decoder.wm.Client.getSequence(from)
-	}else if decoder.wm.Config.APIChoose == "ws" {
+	} else if decoder.wm.Config.APIChoose == "ws" {
 		sequence, err = decoder.wm.WSClient.getSequence(from)
-	}else {
+	} else {
 		return errors.New("Invalid config, check the ini file!")
 	}
 	if err != nil {
 		return errors.New("Failed to get sequence when create transaction!")
 	}
 
-
 	if decoder.wm.Config.APIChoose == "rpc" {
 		blockHeight, err = decoder.wm.Client.getBlockHeight()
-	}else if decoder.wm.Config.APIChoose == "ws" {
+	} else if decoder.wm.Config.APIChoose == "ws" {
 		blockHeight, err = decoder.wm.WSClient.getBlockHeight()
-	}else {
+	} else {
 		return errors.New("Invalid config, check the ini file!")
 	}
 
@@ -235,7 +233,7 @@ func (decoder *TransactionDecoder) CreateRCPRawTransaction(wrapper openwallet.Wa
 		destinationTag = int64(tmp)
 	}
 
-	emptyTrans, hash, err := rippleTransaction.CreateEmptyRawTransactionAndHash(from, fromPub, int32(destinationTag), sequence, to, convertFromAmount(amountStr), fee, uint32(blockHeight)+uint32(decoder.wm.Config.LastLedgerSequenceNumber),decoder.wm.Config.MemoType, "",decoder.wm.Config.MemoFormat)
+	emptyTrans, hash, err := rippleTransaction.CreateEmptyRawTransactionAndHash(from, fromPub, int32(destinationTag), sequence, to, convertFromAmount(amountStr), fee, uint32(blockHeight)+uint32(decoder.wm.Config.LastLedgerSequenceNumber), decoder.wm.Config.MemoType, "", decoder.wm.Config.MemoFormat)
 	if err != nil {
 		return err
 	}
@@ -302,7 +300,7 @@ func (decoder *TransactionDecoder) SignRCPRawTransaction(wrapper openwallet.Wall
 
 				// txHash.Normal.SigPub = *sigPub
 			}
-			sigBytes,_ := hex.DecodeString(signature)
+			sigBytes, _ := hex.DecodeString(signature)
 			if sigBytes[32] >= 0x80 {
 				return errors.New("Failed to serilize S in tx_decode!")
 			}
@@ -455,8 +453,8 @@ func (decoder *TransactionDecoder) CreateSimpleSummaryRawTransaction(wrapper ope
 
 		//创建一笔交易单
 		rawTx := &openwallet.RawTransaction{
-			Coin:    sumRawTx.Coin,
-			Account: sumRawTx.Account,
+			Coin:     sumRawTx.Coin,
+			Account:  sumRawTx.Account,
 			ExtParam: sumRawTx.ExtParam,
 			To: map[string]string{
 				sumRawTx.SummaryAddress: sumAmount,
@@ -509,14 +507,14 @@ func (decoder *TransactionDecoder) createRawTransaction(wrapper openwallet.Walle
 	rawTx.FeeRate = convertToAmount(fee)
 
 	var (
-		sequence uint32
+		sequence      uint32
 		currentHeight uint64
 	)
 	if decoder.wm.Config.APIChoose == "rpc" {
 		sequence, err = decoder.wm.Client.getSequence(from)
-	}else if decoder.wm.Config.APIChoose == "ws" {
+	} else if decoder.wm.Config.APIChoose == "ws" {
 		sequence, err = decoder.wm.WSClient.getSequence(from)
-	}else {
+	} else {
 		return errors.New("Invalid config, check the ini file!")
 	}
 	if err != nil {
@@ -525,9 +523,9 @@ func (decoder *TransactionDecoder) createRawTransaction(wrapper openwallet.Walle
 
 	if decoder.wm.Config.APIChoose == "rpc" {
 		currentHeight, err = decoder.wm.Client.getBlockHeight()
-	}else if decoder.wm.Config.APIChoose == "ws" {
+	} else if decoder.wm.Config.APIChoose == "ws" {
 		currentHeight, err = decoder.wm.WSClient.getBlockHeight()
-	}else {
+	} else {
 		return errors.New("Invalid config, check the ini file!")
 	}
 	if err != nil {
@@ -547,7 +545,7 @@ func (decoder *TransactionDecoder) createRawTransaction(wrapper openwallet.Walle
 		destinationTag = int64(tmp)
 	}
 
-	emptyTrans, hash, err := rippleTransaction.CreateEmptyRawTransactionAndHash(from, fromAddr.PublicKey, int32(destinationTag), sequence, to, convertFromAmount(amountStr), fee, uint32(currentHeight)+uint32(decoder.wm.Config.LastLedgerSequenceNumber),decoder.wm.Config.MemoType, "",decoder.wm.Config.MemoFormat)
+	emptyTrans, hash, err := rippleTransaction.CreateEmptyRawTransactionAndHash(from, fromAddr.PublicKey, int32(destinationTag), sequence, to, convertFromAmount(amountStr), fee, uint32(currentHeight)+uint32(decoder.wm.Config.LastLedgerSequenceNumber), decoder.wm.Config.MemoType, "", decoder.wm.Config.MemoFormat)
 
 	if err != nil {
 		return err

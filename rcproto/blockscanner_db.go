@@ -17,7 +17,7 @@ package rcproto
 
 import (
 	"fmt"
-	"github.com/blocktree/openwallet/openwallet"
+	"github.com/blocktree/openwallet/v2/openwallet"
 )
 
 //SaveLocalBlockHead 记录区块高度和hash到本地
@@ -84,8 +84,8 @@ func (bs *RCPBlockScanner) GetLocalBlock(height uint32) (*Block, error) {
 	}
 
 	block := &Block{
-		Hash: header.Hash,
-		Height:  header.Height,
+		Hash:   header.Hash,
+		Height: header.Height,
 	}
 
 	return block, nil
